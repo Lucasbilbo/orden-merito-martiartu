@@ -18,12 +18,13 @@ Entra en `/admin` con ese correo y contraseña.
 ## Meter los resultados de un torneo
 
 1. `/admin` > elige temporada > en el torneo, **Resultados**. (Si el torneo no existe: **Añadir torneo**, con fecha, campo y si es la final.)
-2. Pega las filas que te pasa el club en **Pegar resultados** y pulsa **Leer**. Vale:
+2. **Importar PDF del campo:** sube a la vez la clasificación Handicap (Stableford) y la Scratch. Se leen nombre, puntos y hándicap exacto (HEX), y se descartan los no presentados y retirados. Si el torneo ya tenía resultados, te avisa de las diferencias.
+   Alternativa: pega las filas en **Pegar resultados** y pulsa **Leer**. Vale:
    - desde Excel, con cabecera: `Jugador | Stableford | Scratch | Hcp` (cualquier orden de columnas);
    - CSV con `;`: `Iñaki Etxeberria Garai;38;30;6,1`;
    - texto copiado del PDF: `1 ETXEBERRIA GARAI, IÑAKI 38 30 6.1` (el puesto de delante se ignora).
-3. Revisa la tabla: los jugadores reconocidos salen ya elegidos; los **amarillos** tienen nombres parecidos y hay que elegir; los que no existen se crean como nuevos (corrige nombre y apellidos si hace falta).
-4. **Guardar resultados.** Los puestos se calculan solos (más puntos; a igualdad, hándicap más bajo). Si el club da otro orden, marca *Puestos a mano*.
+3. Revisa la tabla: los jugadores reconocidos salen ya elegidos (aunque el PDF corte el nombre o haya erratas); los **amarillos** tienen nombres parecidos y hay que elegir. Al importar un PDF, los que no están en la base salen en **gris** como "No es de la Orden" y no se guardan; si sí son de la Orden, elige "Crear jugador nuevo". Al pegar texto, los desconocidos se proponen como nuevos.
+4. **Guardar resultados.** Los puestos se calculan solos por puntos entre los jugadores de la Orden; los empatados comparten puesto, como en el sistema antiguo. Si hace falta otro orden, marca *Puestos a mano*.
 
 Guardar de nuevo un torneo sustituye sus resultados; no duplica.
 

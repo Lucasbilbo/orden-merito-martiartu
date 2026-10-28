@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { matchName, parsePasted, splitName } from '../src/lib/paste.js'
 import { tournamentResults } from '../src/lib/standings.js'
+import { parseResultSheet, resolveModalities } from '../src/lib/pdfResults.js'
 
 let n = 0
 const t = (label, fn) => {
@@ -72,7 +73,7 @@ t('nombre nuevo se separa en nombre y apellidos', () => {
   assert.deepEqual(splitName('Urrutia, Koldo'), { nombre: 'Koldo', apellido1: 'Urrutia', apellido2: '' })
 })
 
-t('puestos: más puntos, luego hándicap más bajo, empate compartido', () => {
+t('puestos del torneo: solo por puntos, empatados comparten puesto', () => {
   const res = tournamentResults(1, [
     { player_id: 1, stableford: 36, hcp: 10 },
     { player_id: 2, stableford: 36, hcp: 8 },
@@ -81,7 +82,61 @@ t('puestos: más puntos, luego hándicap más bajo, empate compartido', () => {
     { player_id: 5, stableford: 30, hcp: '' },
   ])
   const pos = Object.fromEntries(res.map((r) => [r.player_id, r.position]))
-  assert.deepEqual(pos, { 1: 3, 2: 2, 3: 1, 4: 4, 5: 4 })
+  assert.deepEqual(pos, { 1: 2, 2: 2, 3: 1, 4: 4, 5: 4 })
+})
+
+// Líneas como las que reconstruye pdf.js de los listados de los campos (nombres inventados).
+const sheetLines = (title) => [
+  'Fecha Listado: 12/04/2026',
+  'CAMPO DE PRUEBA GOLF',
+  'INDIVIDUAL - Stableford   (Recorrido: Prueba)   FECHA: 12/04/2026 CODIGO: X1',
+  `${title} (ASC: 0)   1ªVuelta`,
+  'POS JUGADOR   CLUB   HEX NVH NIV   S Cat Hpu   1ª   2ª   3ª   4ª   TOT',
+  '1 ETXEBERRIA GARAI, IÑAKI   MARTIARTU   15,4   15,5   S   M   3   19   38   38',
+  'ZUBIZARRETA OLANO, ANE   PALACIO URGOITI   17,7   17,5   J   F   3   20   38   38',
+  '3 URRUTIA BASTERRA, KOLDO   FEDERACIÓN CÁNT 27,4   M M   5   25   35   35',
+  '4 ARRIETA URIBE, JO   MARTIARTU   11,9   M M   3   14   30   30',
+  '5 GOIKOETXEA LASA, MIKEL   MARTIARTU   31,4   S   M   5   36   N.P',
+]
+
+t('PDF del campo: puestos empatados, club cortado, no presentados', () => {
+  const s = parseResultSheet(sheetLines('Clasificación Handicap Indistinta'), 'hcdm.pdf')
+  assert.equal(s.date, '2026-04-12')
+  assert.equal(s.course, 'CAMPO DE PRUEBA GOLF')
+  assert.equal(s.modality, 'stableford')
+  assert.deepEqual(s.rows.map((r) => [r.name, r.position, r.points, r.hcp]), [
+    ['IÑAKI ETXEBERRIA GARAI', 1, 38, 15.4],
+    ['ANE ZUBIZARRETA OLANO', 1, 38, 17.7],
+    ['KOLDO URRUTIA BASTERRA', 3, 35, 27.4],
+    ['JO ARRIETA URIBE', 4, 30, 11.9],
+  ])
+  assert.equal(s.skipped[0].status, 'N.P')
+})
+
+t('modalidad: el PDF sin título claro es la contraria del otro', () => {
+  const a = parseResultSheet(sheetLines('TORNEO MARTIARTU'), 'a.pdf')
+  const b = parseResultSheet(sheetLines('Torneo Martiartu HCP'), 'b.pdf')
+  resolveModalities([a, b])
+  assert.equal(a.modality, 'scratch')
+  assert.equal(b.modality, 'stableford')
+})
+
+t('empareja nombres cortados, abreviados y con erratas', () => {
+  const ps = [
+    { id: 1, nombre: 'Francisco Javier', apellido1: 'Sobrino', apellido2: 'Andueza' },
+    { id: 2, nombre: 'Juan', apellido1: 'Riaño', apellido2: 'García de Pereda' },
+    { id: 3, nombre: 'Fermin', apellido1: 'Vidaurre', apellido2: 'Laind' },
+    { id: 4, nombre: 'Luis', apellido1: 'Biritxinaga', apellido2: 'Acebal' },
+    { id: 5, nombre: 'Jorge', apellido1: 'Biritxinaga', apellido2: 'Acebal' },
+    { id: 6, nombre: 'Xabier', apellido1: 'Uriarte', apellido2: 'Garcia-Echave' },
+    { id: 7, nombre: 'Jon', apellido1: 'Uriarte', apellido2: 'Garcia-Echave' },
+  ]
+  assert.equal(matchName('FCO. JAVIE SOBRINO ANDUEZA', ps).player_id, 1)
+  assert.equal(matchName('JUA RIAÑO GARCIA DE PEREDA', ps).player_id, 2)
+  assert.equal(matchName('FERMIN VIDAURRE LAINO', ps).player_id, 3)
+  assert.equal(matchName('LUIS BIRICHINAGA ACEBAL', ps).player_id, 4)
+  assert.equal(matchName('XAVI URIARTE GARCIA-ECHAVE', ps).player_id, 6)
+  assert.equal(matchName('PERSONA DESCONOCIDA', ps).player_id, null)
 })
 
 console.log(`\n${n} pruebas OK`)

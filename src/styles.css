@@ -284,3 +284,11 @@ code { font-size: 13px; background: var(--wash); padding: 2px 5px; border-radius
 .brand { display: inline-block; line-height: 44px; }
 .hcp-tag { margin-left: 0; }
 .hcp-tag::before { content: ' · '; color: var(--muted); font-weight: 400; }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.pdf-info { margin-top: 12px; font-size: 14px; color: var(--ink); }
+.pdf-info p { margin: 4px 0; }
+.pdf-info details { margin-top: 8px; background: var(--amber-wash); border-radius: 8px; padding: 8px 12px; }
+.pdf-info summary { cursor: pointer; font-weight: 500; }
+.pdf-info ul { margin: 8px 0 0; padding-left: 18px; }
+.edit tr.skipped td { opacity: 0.5; }

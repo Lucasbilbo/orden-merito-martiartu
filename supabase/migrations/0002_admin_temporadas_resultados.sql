@@ -152,8 +152,8 @@ $$;
 -- 8. Guardar resultados de un torneo ---------------------------------------------
 -- p_rows: [{"player_id": 12, "stableford": 36, "scratch": 20, "hcp": 14.2,
 --           "pos_stableford": null, "pos_scratch": null}, ...]
--- Sustituye todos los resultados y handicaps del torneo. Si no se dan puestos, se calculan:
--- más puntos primero y, a igualdad, handicap más bajo; si también empatan, comparten puesto.
+-- Sustituye todos los resultados y handicaps del torneo. Si no se dan puestos, se calculan por
+-- puntos entre los jugadores de la Orden; los empatados comparten puesto (como el sistema antiguo).
 -- Convierte el JSON de filas en una tabla tipada.
 create or replace function public._parse_result_rows(p_rows jsonb)
 returns table(player_id int, sf int, sc int, hcp numeric(3,1), pos_sf int, pos_sc int)
@@ -187,13 +187,13 @@ begin
 
   insert into results(tournament_id, player_id, modality, position, points)
   select p_tournament_id, player_id, 'stableford',
-         coalesce(pos_sf, rank() over (order by sf desc, hcp asc nulls last)), sf
+         coalesce(pos_sf, rank() over (order by sf desc)), sf
   from public._parse_result_rows(p_rows) where sf is not null;
   get diagnostics v_sf = row_count;
 
   insert into results(tournament_id, player_id, modality, position, points)
   select p_tournament_id, player_id, 'scratch',
-         coalesce(pos_sc, rank() over (order by sc desc, hcp asc nulls last)), sc
+         coalesce(pos_sc, rank() over (order by sc desc)), sc
   from public._parse_result_rows(p_rows) where sc is not null;
   get diagnostics v_sc = row_count;
 

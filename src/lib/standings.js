@@ -38,7 +38,8 @@ export function tournamentResults(tournamentId, rows) {
     const withPts = rows
       .filter((r) => r[key] !== null && r[key] !== undefined && r[key] !== '')
       .map((r) => ({ ...r, pts: Number(r[key]), hcp: r.hcp === '' || r.hcp == null ? null : Number(r.hcp) }))
-    for (const r of rankByPoints(withPts, 'pts')) {
+    // Puesto en el torneo: solo por puntos; los empatados comparten puesto (como el sistema antiguo).
+    for (const r of rankByPoints(withPts.map((x) => ({ ...x, hcp: null })), 'pts')) {
       const given = r[posKey] === '' || r[posKey] == null ? null : Number(r[posKey])
       out.push({
         tournament_id: tournamentId,

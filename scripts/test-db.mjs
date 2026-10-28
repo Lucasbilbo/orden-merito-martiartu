@@ -139,7 +139,7 @@ const saved = psql(
 const key = (r) => `${r.modality}|${r.player_id}|${r.position}|${r.points}`
 const expected = tournamentResults(5, rows).map(key).sort()
 check('puestos calculados igual en SQL y JS', saved.map(key).sort().join() === expected.join(), saved.map(key).sort().join(' '))
-check('a igualdad de puntos gana el hcp más bajo', saved.find((r) => r.modality === 'stableford' && r.player_id === 1).position === 2)
+check('a igualdad de puntos comparten puesto', saved.filter((r) => r.modality === 'stableford' && r.position === 2).length === 2)
 check('sin scratch no se crea fila scratch', !saved.some((r) => r.modality === 'scratch' && r.player_id === 4))
 const cur = psql('select handicap from public.player_private where player_id = 1').trim()
 check('handicap actual se actualiza', cur === '6.1', cur)

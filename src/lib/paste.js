@@ -130,7 +130,37 @@ export function parsePasted(text) {
   return { rows: out, mode: sep ? (map ? 'cabecera' : 'columnas') : 'texto' }
 }
 
-const tokens = (s) => normalize(s).replace(/[^a-z0-9ñ ]/g, ' ').split(' ').filter((t) => t.length > 1 || /\d/.test(t))
+// Nombres equivalentes habituales en los listados de los campos.
+const ALIAS = { fco: 'francisco', fran: 'francisco', xavi: 'xabier', xabi: 'xabier', javi: 'javier', jj: 'juanjo', inigo: 'inigo', ma: '' }
+const tokens = (s) =>
+  normalize(s)
+    .replace(/m[ªa]\b/g, ' ')
+    .replace(/tx/g, 'ch')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(' ')
+    .map((t) => (t in ALIAS ? ALIAS[t] : t))
+    .filter((t) => t.length > 1 && !['de', 'del', 'la', 'las', 'los', 'y'].includes(t))
+
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+
+// Parecido entre dos palabras: igual 1; una empieza por la otra (nombres cortados en los PDF) 0,9;
+// una o dos letras distintas en palabras largas (erratas) 0,8.
+function tokenSim(a, b) {
+  if (a === b) return 1
+  const [s, l] = a.length <= b.length ? [a, b] : [b, a]
+  if (s.length >= 3 && l.startsWith(s)) return 0.9
+  if (s.length >= 5 && lev(a, b) <= (s.length >= 7 ? 2 : 1)) return 0.8
+  return 0
+}
+
+const bestSim = (t, list) => Math.max(0, ...list.map((o) => tokenSim(t, o)))
 
 // Empareja un nombre con la lista de jugadores. Devuelve { player_id, candidates: [{ id, score }] }.
 // Solo se asigna automáticamente si hay un único candidato claro.
@@ -140,19 +170,15 @@ export function matchName(name, players) {
   const scored = players
     .map((p) => {
       const b = tokens([p.nombre, p.apellido1, p.apellido2].filter(Boolean).join(' '))
-      const inB = a.filter((t) => b.includes(t)).length
-      const inA = b.filter((t) => a.includes(t)).length
-      let score = 0
-      if (inB === a.length && inA === b.length) score = 100
-      else if (inB === a.length && a.length >= 2) score = 90 - (b.length - inA)
-      else if (inA === b.length && b.length >= 2) score = 85 - (a.length - inB)
-      else if (inB >= 2) score = 50 + inB
-      return { id: p.id, score }
+      if (!b.length) return { id: p.id, score: 0 }
+      const simA = a.reduce((s, t) => s + bestSim(t, b), 0) / a.length
+      const simB = b.reduce((s, t) => s + bestSim(t, a), 0) / b.length
+      return { id: p.id, score: Math.round(100 * (0.6 * simA + 0.4 * simB)) }
     })
-    .filter((x) => x.score > 0)
+    .filter((x) => x.score >= 40)
     .sort((x, y) => y.score - x.score)
   const best = scored[0]
-  const clear = best && best.score >= 80 && (!scored[1] || scored[1].score < best.score)
+  const clear = best && best.score >= 85 && (!scored[1] || scored[1].score <= best.score - 10)
   return { player_id: clear ? best.id : null, candidates: scored.slice(0, 4) }
 }
 

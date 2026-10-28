@@ -12,16 +12,17 @@ let keySeq = 0
 const newKey = () => `r${++keySeq}`
 const EMPTY = { stableford: '', scratch: '', hcp: '', pos_stableford: '', pos_scratch: '' }
 const NEW = 'new'
+const SKIP = 'skip' // no es de la Orden: no se guarda
 
-// Una fila del editor. choice: id de jugador, 'new' (crear) o '' (sin decidir).
+// Una fila del editor. choice: id de jugador, 'new' (crear), 'skip' (no incluir) o '' (sin decidir).
 function rowFromEntry(e, players) {
   const p = players.find((x) => x.id === e.player_id)
   return { key: newKey(), ...EMPTY, ...e, choice: String(e.player_id), name: fullName(p), candidates: [], newPlayer: null }
 }
 
-function rowFromPasted(r, players) {
+function rowFromPasted(r, players, unknown = NEW) {
   const m = matchName(r.name, players)
-  const choice = m.player_id ? String(m.player_id) : m.candidates.some((c) => c.score >= 50) ? '' : NEW
+  const choice = m.player_id ? String(m.player_id) : m.candidates.some((c) => c.score >= 50) ? '' : unknown
   return {
     key: newKey(),
     ...EMPTY,
@@ -45,10 +46,11 @@ function validate(rows) {
   const seen = new Map()
   rows.forEach((r, i) => {
     const n = i + 1
+    if (r.choice === SKIP) return
     if (r.error) problems.push(`Fila ${n}: ${r.error}.`)
     if (!r.choice) problems.push(`Fila ${n} (${r.name || 'sin nombre'}): elige el jugador o crea uno nuevo.`)
     if (r.choice === NEW && !r.newPlayer?.nombre?.trim()) problems.push(`Fila ${n}: el jugador nuevo necesita nombre.`)
-    if (r.choice && r.choice !== NEW) {
+    if (r.choice && r.choice !== NEW && r.choice !== SKIP) {
       if (seen.has(r.choice)) problems.push(`Filas ${seen.get(r.choice)} y ${n}: el mismo jugador está dos veces.`)
       seen.set(r.choice, n)
     }
@@ -68,7 +70,7 @@ function validate(rows) {
 
 function PlayerCell({ row, players, onChange }) {
   const byScore = row.candidates.filter((c) => c.score >= 50).map((c) => players.find((p) => p.id === c.id)).filter(Boolean)
-  const decided = row.choice && row.choice !== NEW
+  const decided = row.choice && row.choice !== NEW && row.choice !== SKIP
   return (
     <div className={`player-cell${!row.choice ? ' needs' : ''}`}>
       {row.name && (!decided || normalize(row.name) !== normalize(fullName(players.find((p) => String(p.id) === row.choice)))) && (
@@ -90,6 +92,7 @@ function PlayerCell({ row, players, onChange }) {
           </optgroup>
         )}
         <option value={NEW}>+ Crear jugador nuevo</option>
+        <option value={SKIP}>No es de la Orden (no incluir)</option>
         <optgroup label="Todos">
           {players.map((p) => (
             <option key={p.id} value={String(p.id)}>
@@ -126,6 +129,8 @@ export default function Results({ id }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [dirty, setDirty] = useState(false)
+  const [pdfInfo, setPdfInfo] = useState(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
 
   const players = useMemo(
     () => [...(playersState.data || [])].sort((a, b) => fullName(a).localeCompare(fullName(b), 'es')),
@@ -175,10 +180,75 @@ export default function Results({ id }) {
     )
   }
 
+  // Importa 1 o 2 PDF del campo (clasificación Handicap = Stableford y Scratch) y rellena la tabla.
+  const importPdfs = async (files) => {
+    if (!files.length) return
+    if (rows?.length && !window.confirm('¿Sustituir la tabla actual por los resultados de los PDF? (Lo guardado no cambia hasta que pulses Guardar.)')) return
+    setPdfBusy(true)
+    setPdfInfo(null)
+    try {
+      const { readResultPdf, resolveModalities } = await import('../lib/pdfResults.js')
+      const sheets = resolveModalities(await Promise.all(files.map((f) => readResultPdf(f))))
+      const byName = new Map()
+      for (const sh of sheets) {
+        for (const r of sh.rows) {
+          const k = normalize(r.name)
+          if (!byName.has(k)) byName.set(k, { name: r.name, stableford: '', scratch: '', hcp: r.hcp, pos_stableford: '', pos_scratch: '' })
+          const e = byName.get(k)
+          e[sh.modality] = r.points
+          if (e.hcp === '') e.hcp = r.hcp
+        }
+      }
+      const fresh = [...byName.values()].map((r) => rowFromPasted(r, players, SKIP))
+      fresh.sort((a, b) => (num(b.stableford) || 0) - (num(a.stableford) || 0))
+
+      // Diferencias con lo guardado
+      const prev = new Map((entriesState.data || []).map((e) => [String(e.player_id), e]))
+      const diffs = []
+      for (const r of fresh) {
+        const e = prev.get(r.choice)
+        if (!e) continue
+        for (const m of ['stableford', 'scratch']) {
+          if (r[m] !== '' && e[m] !== '' && Number(r[m]) !== Number(e[m])) diffs.push(`${fullName(players.find((p) => String(p.id) === r.choice))}: ${m} ${e[m]} → ${r[m]}`)
+        }
+      }
+      const chosen = new Set(fresh.map((r) => r.choice))
+      const missing = [...prev.keys()].filter((id) => !chosen.has(id)).map((id) => fullName(players.find((p) => String(p.id) === id)))
+
+      const lines = sheets.map((sh) => {
+        const mod = sh.modality === 'scratch' ? 'Scratch' : 'Stableford'
+        const parts = [`${sh.fileName}: ${mod}${sh.guessed ? ' (supuesto)' : ''}, ${sh.rows.length} jugadores`]
+        if (sh.skipped.length) parts.push(`${sh.skipped.length} sin resultado (${sh.skipped.map((x) => x.status).join(', ')})`)
+        if (sh.unread.length) parts.push(`${sh.unread.length} líneas sin leer`)
+        if (sh.date && t && sh.date !== t.date) parts.push(`OJO: el PDF es del ${formatDate(sh.date)}`)
+        return parts.join(' · ')
+      })
+      if (!sheets.some((sh) => sh.rows.length)) throw new Error('No he encontrado resultados en el PDF. Prueba a copiar y pegar el texto.')
+      const mods = new Set(sheets.map((sh) => sh.modality))
+      if (mods.size < sheets.length) lines.push('Hay dos PDF de la misma modalidad: revisa cuál es Stableford y cuál Scratch.')
+      const skipped = fresh.filter((r) => r.choice === SKIP).length
+      const doubt = fresh.filter((r) => !r.choice).length
+      lines.push(
+        `${fresh.length - skipped - doubt} jugadores reconocidos` +
+          (doubt ? `, ${doubt} por confirmar (amarillo)` : '') +
+          (skipped ? `, ${skipped} que no están en la Orden (en gris; cámbialos si sí lo están)` : '') +
+          '.',
+      )
+      setRows(fresh)
+      setDirty(true)
+      setManualPos(false)
+      setPdfInfo({ lines, diffs, missing })
+    } catch (err) {
+      setPdfInfo({ error: err.message || 'No se ha podido leer el PDF.' })
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+
   // Vista previa de puestos con la misma lógica que la base de datos.
   const preview = useMemo(() => {
     if (!rows) return {}
-    const input = rows.map((r) => ({
+    const input = rows.filter((r) => r.choice !== SKIP).map((r) => ({
       player_id: r.key,
       stableford: num(r.stableford),
       scratch: num(r.scratch),
@@ -202,7 +272,7 @@ export default function Results({ id }) {
     const created = {}
     try {
       const finalRows = []
-      for (const r of rows) {
+      for (const r of rows.filter((x) => x.choice !== SKIP)) {
         let playerId = Number(r.choice)
         if (r.choice === NEW) {
           playerId = await api.createPlayer({ ...r.newPlayer, handicap: num(r.hcp) })
@@ -259,11 +329,58 @@ export default function Results({ id }) {
           </p>
 
           <section className="card paste">
+            <h2 className="admin-h2">Importar PDF del campo</h2>
+            <p className="hint">
+              Sube a la vez la clasificación Handicap (Stableford) y la Scratch que manda el campo. Se leen nombre, puntos y
+              hándicap exacto (HEX); los no presentados y retirados se descartan. Revisa la tabla y pulsa Guardar.
+            </p>
+            <label className="btn primary file-btn">
+              {pdfBusy ? 'Leyendo…' : 'Elegir PDF'}
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                disabled={pdfBusy}
+                onChange={(e) => {
+                  const picked = [...e.target.files]
+                  e.target.value = ''
+                  importPdfs(picked)
+                }}
+              />
+            </label>
+            {pdfInfo?.error && (
+              <p className="form-error" role="alert">
+                {pdfInfo.error}
+              </p>
+            )}
+            {pdfInfo?.lines && (
+              <div className="pdf-info" role="status">
+                {pdfInfo.lines.map((l) => (
+                  <p key={l}>{l}</p>
+                ))}
+                {pdfInfo.diffs.length > 0 && (
+                  <details open>
+                    <summary>{pdfInfo.diffs.length} diferencias con lo que ya estaba guardado</summary>
+                    <ul>
+                      {pdfInfo.diffs.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                {pdfInfo.missing.length > 0 && (
+                  <p>Estaban guardados y no salen en el PDF: {pdfInfo.missing.join(', ')}.</p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="card paste">
             <h2 className="admin-h2">Pegar resultados</h2>
             <p className="hint">
               Copia desde Excel, un CSV o el PDF del club. Una fila por jugador:{' '}
               <code>Nombre y apellidos; Stableford; Scratch; Hándicap</code>. Si pegas con cabecera (Jugador, Stableford,
-              Scratch, Hcp…) da igual el orden de las columnas. El puesto no hace falta: se calcula solo.
+              Scratch, Hcp…) da igual el orden de las columnas. El puesto no hace falta: se calcula solo entre los jugadores de la Orden.
             </p>
             <textarea
               rows={6}
@@ -297,7 +414,7 @@ export default function Results({ id }) {
 
           <section>
             <div className="table-head">
-              <h2 className="admin-h2">Resultados ({rows?.length || 0})</h2>
+              <h2 className="admin-h2">Resultados ({rows?.filter((r) => r.choice !== SKIP).length || 0})</h2>
               <label className="check small">
                 <input type="checkbox" checked={manualPos} onChange={(e) => setManualPos(e.target.checked)} />
                 <span>Puestos a mano</span>
@@ -317,7 +434,7 @@ export default function Results({ id }) {
                 </thead>
                 <tbody>
                   {(rows || []).map((r) => (
-                    <tr key={r.key} className={r.error ? 'has-error' : !r.choice ? 'needs' : undefined}>
+                    <tr key={r.key} className={r.choice === SKIP ? 'skipped' : r.error ? 'has-error' : !r.choice ? 'needs' : undefined}>
                       <td>
                         <PlayerCell row={r} players={players} onChange={(p) => update(r.key, p)} />
                         {r.error && <span className="row-error">{r.error}</span>}

@@ -68,8 +68,8 @@ export default function Rules() {
             <strong>Puntos de cada torneo:</strong> los Stableford y Scratch que da el campo. Se meten tal cual en Resultados.
           </li>
           <li>
-            <strong>Puesto en el torneo:</strong> más puntos primero; a igualdad, hándicap más bajo; si también empatan,
-            comparten puesto. Se puede poner a mano si el club da otro orden.
+            <strong>Puesto en el torneo:</strong> por puntos, contando solo a los jugadores de la Orden; los empatados
+            comparten puesto, como en el sistema antiguo. Se puede poner a mano si hace falta.
           </li>
           <li>
             <strong>Clasificación de la temporada:</strong> mejores N resultados + final × multiplicador. Empate: hándicap más

@@ -36,10 +36,10 @@ RLS: el público ve cuántos inscritos hay y los nombres (como la clasificación
 ### Fuera
 Pago (lo dijiste). Gestión del hándicap oficial: la RFEG no tiene API pública, se sigue metiendo a mano.
 
-## Fase 2 — Importar resultados desde PDF
-- Subir el PDF en *Resultados*; extraer el texto en el navegador con `pdfjs-dist` y pasarlo por el mismo lector de *Pegar resultados* (que ya entiende `1 APELLIDOS, NOMBRE 38 30 6.1`).
-- Como los PDF de cada campo son distintos, pedir un PDF real de 3–4 clubes y añadir sus formatos al lector, con pruebas (`scripts/test-lib.mjs`).
-- Plan B si el PDF es imagen: Netlify Function que llama a Claude con el PDF y devuelve las filas en el mismo formato; siempre se revisa en la tabla antes de guardar.
+## Importar resultados desde PDF — HECHO (29/10)
+Funciona con el formato de Uraburu y Abra del Pas. Pendiente:
+- Probar PDF de otros campos (Izki, Meaztegi, Zuia, La Nivelle, Llanes, Rioja Alta, Villarías). Si alguno tiene otro formato, añadirlo a `src/lib/pdfResults.js` con su prueba.
+- Plan B si un PDF es una imagen escaneada: Netlify Function que lo pasa a Claude y devuelve las filas en el mismo formato, siempre revisadas en la tabla antes de guardar.
 
 ## Ideas sueltas
 - Ficha de jugador (`/jugador/:id`) con su historial por temporadas.

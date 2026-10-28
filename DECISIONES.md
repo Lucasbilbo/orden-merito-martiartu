@@ -12,10 +12,17 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 3. **Temporadas = año.** Nueva tabla `seasons` con las reglas de cada año (`best_n`, `final_multiplier`). Un torneo pertenece a la temporada del año de su fecha.
 4. **"Puntos" de un torneo = puntos Stableford/Scratch que da el campo**, como en el PHP y como dijiste ("los puntos los da el campo"). No hay tabla de puntos por puesto: el puesto solo se usa para el ranking histórico. La tabla del encargo quedó sin rellenar; si existe otra tabla de puntos por puesto, avísame.
 5. **Cuentan los 4 mejores + la final ×2**, no los 8. Es lo que hacía el PHP y la clasificación 2026 cuadró al 100 % con esa regla. Configurable por temporada.
-6. **Puesto en cada torneo calculado solo:** más puntos; empate → hándicap más bajo; si también empatan, comparten puesto. Opción de meterlo a mano por si el club desempata de otra forma (p. ej. últimos hoyos).
+6. **Puesto en cada torneo calculado solo,** por puntos y solo entre jugadores de la Orden; los empatados comparten puesto. Así lo hacía el PHP (comprobado con los PDF de Uraburu y Abra del Pas). El hándicap solo desempata la clasificación de la temporada. Se puede meter a mano.
 7. **Desempate de la temporada:** hándicap más bajo de la final; si no jugó la final, el último de la temporada; si no hay, el hándicap actual del jugador. Si siguen empatados, comparten puesto (T3).
 8. **Hándicaps privados.** "En público solo el nombre": quito la lectura pública de `handicaps` (estaba abierta) y el hándicap actual va en `player_private`. La web muestra "desempate por hándicap" pero no el número.
 9. **Ids automáticos** para jugadores y torneos nuevos, continuando los del PHP. Nombre interno con el formato antiguo (`OMNoviembre26`).
+
+## Importar PDF (añadido la misma noche, con 4 PDF reales de Uraburu y Abra del Pas)
+19. Se lee el PDF en el navegador (pdf.js), sin servidor ni IA: los dos campos usan el mismo programa de gestión y el texto es extraíble. Solo se descarga pdf.js al pulsar "Elegir PDF".
+20. Del PDF se toman nombre, puntos (TOT), hándicap exacto (HEX). Los puestos del PDF no se usan: se recalculan entre los jugadores de la Orden, como hacía el PHP.
+21. Modalidad por el título ("Handicap" = Stableford, "Scratch"); si no lo dice (el de Uraburu pone solo "TORNEO MARTIARTU"), por el nombre del archivo o por ser la contraria del otro PDF.
+22. Jugadores del PDF que no están en la base: por defecto **no se incluyen** ("No es de la Orden"), porque el PHP no los metía (Benninghaus, Vicente Martiarena, Antolín Largo). Se pueden crear con un clic.
+23. Emparejado tolerante: nombres cortados ("FCO. JAVIE"), abreviaturas, tx/ch (Birichinaga/Biritxinaga) y erratas de una letra (Laino/Laind, Vierna/Viema). Con los 4 PDF reales: 74 de 77 nombres solos; los 3 restantes no están en la base.
 
 ## Seguridad
 10. **Admin = correo en la tabla `admins` + correo confirmado** en Supabase Auth. Así, aunque alguien se registre con tu correo antes que tú, sin confirmar no tiene permisos. Recomiendo además cerrar el registro público.
