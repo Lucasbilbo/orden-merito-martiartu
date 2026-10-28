@@ -2,5 +2,8 @@ node_modules
 dist
 dist-preview
 .env
+.netlify
+# Volcados de la base antigua (no subir)
 *.sql
 *.sql.gz
+!supabase/migrations/*.sql

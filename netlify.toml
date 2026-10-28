@@ -1,3 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+
+# Rutas de la app (/torneo/12, /admin...) servidas por index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
