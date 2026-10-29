@@ -38,3 +38,6 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 
 ## Despliegue
 18. Subo a `main`, que Netlify publica solo. La web real seguía sin datos de todos modos por la pausa de Supabase, así que no empeora nada; mientras tanto la demo funciona.
+
+## Hándicap limitado (confirmado por Lucas, 29/10)
+24. Hasta ahora la Orden no limitaba el hándicap de juego; por eso en Uraburu 2026 los Stableford guardados de los jugadores con hándicap alto son mayores que los del PDF (el campo topó en 36). **Desde la próxima temporada se limita**, así que los puntos del PDF valen tal cual. Los resultados históricos no se tocan.
