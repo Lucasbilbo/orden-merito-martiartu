@@ -9,8 +9,8 @@ Web de la Orden de Mérito del Club Deportivo Martiartu: clasificaciones públic
 ## Puesta en marcha (una sola vez)
 
 1. **Supabase activo.** El plan gratuito pausa los proyectos tras 7 días sin uso; la función `keepalive` de Netlify lo consulta a diario para evitarlo. Si aun así se pausara, Supabase > proyecto > *Restore project*.
-2. **Aplicar la migración.** Supabase > SQL Editor > New query: pega entero `supabase/migrations/0002_admin_temporadas_resultados.sql` y pulsa *Run*. No borra datos.
-3. **Crear tu usuario admin.** Supabase > Authentication > Users > *Add user* > *Create new user*, con `lucasbilbao.lucasbi@gmail.com`, una contraseña y **Auto Confirm User** marcado. Solo ese correo tiene permiso de escritura (tabla `admins`).
+2. **Migraciones:** 0001, 0002 y 0003 ya están aplicadas (29/10/2026). Si añades una nueva, pégala en Supabase > SQL Editor > New query > *Run*.
+3. **Usuario admin** (ya creado). Supabase > Authentication > Users > *Add user* > *Create new user*, con `lucasbilbao.lucasbi@gmail.com`, una contraseña y **Auto Confirm User** marcado. Solo ese correo tiene permiso de escritura (tabla `admins`).
 4. **Cerrar el registro público** (recomendado). Authentication > Sign In / Providers > Email: desactiva *Allow new users to sign up*.
 
 Entra en `/admin` con ese correo y contraseña.

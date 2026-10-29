@@ -4,7 +4,7 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 
 ## Contexto encontrado
 - **Ya había una v1** (20/10): web pública en GitHub y Netlify sobre el proyecto Supabase `orden-merito-martiartu` con los datos reales (110 jugadores, 43 torneos, ~2.500 resultados migrados del PHP). **He construido encima** en vez de crear otro proyecto y empezar de cero: rehacerlo habría perdido la migración ya verificada.
-- **El proyecto de Supabase está pausado** (plan gratuito, 7 días sin uso). No he podido reactivarlo: la herramienta me pidió tu permiso. Por eso la migración nueva está escrita y probada en un Postgres local, pero **no aplicada**. Hasta que reactives el proyecto la web real no carga datos; la demo sí.
+- **El proyecto de Supabase estaba pausado** (plan gratuito, 7 días sin uso). Se reactivó el 29/10 y Lucas aplicó la migración 0002 desde el SQL Editor; ahora la función `keepalive` evita nuevas pausas.
 
 ## Datos
 1. **Datos de prueba solo en modo demo** (`?demo=1`), nunca en la base real: meter 40 jugadores falsos junto a los reales los habría mezclado en la clasificación pública.
@@ -37,7 +37,7 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 17. Enlace "Administración" discreto en el pie de la web pública.
 
 ## Despliegue
-18. Subo a `main`, que Netlify publica solo. La web real seguía sin datos de todos modos por la pausa de Supabase, así que no empeora nada; mientras tanto la demo funciona.
+18. Subo a `main`, que Netlify publica solo.
 
 ## Hándicap limitado (confirmado por Lucas, 29/10)
 24. Hasta ahora la Orden no limitaba el hándicap de juego; por eso en Uraburu 2026 los Stableford guardados de los jugadores con hándicap alto son mayores que los del PDF (el campo topó en 36). **Desde la próxima temporada se limita**, así que los puntos del PDF valen tal cual. Los resultados históricos no se tocan.
