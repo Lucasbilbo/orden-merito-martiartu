@@ -22,7 +22,7 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 20. Del PDF se toman nombre, puntos (TOT), hándicap exacto (HEX). Los puestos del PDF no se usan: se recalculan entre los jugadores de la Orden, como hacía el PHP.
 21. Modalidad por el título ("Handicap" = Stableford, "Scratch"); si no lo dice (el de Uraburu pone solo "TORNEO MARTIARTU"), por el nombre del archivo o por ser la contraria del otro PDF.
 22. Jugadores del PDF que no están en la base: por defecto **no se incluyen** ("No es de la Orden"), porque el PHP no los metía (Benninghaus, Vicente Martiarena, Antolín Largo). Se pueden crear con un clic.
-23. Emparejado tolerante: nombres cortados ("FCO. JAVIE"), abreviaturas, tx/ch (Birichinaga/Biritxinaga) y erratas de una letra (Laino/Laind, Vierna/Viema). Con los 4 PDF reales: 74 de 77 nombres solos; los 3 restantes no están en la base.
+23. Emparejado tolerante: nombres cortados ("FCO. JAVIE"), abreviaturas, tx/ch (Birichinaga/Biritxinaga) y erratas de una letra (Laino/Laind, Vierna/Viema). Con los 4 PDF reales se reconocen solos todos los jugadores que están en la base (también con un apellido de más, como Aniel-Quiroga Trujillo); solo quedan fuera los que no son de la Orden. Comprobado contra lo guardado: Abra del Pas y el Scratch de Uraburu cuadran al 100 %.
 
 ## Seguridad
 10. **Admin = correo en la tabla `admins` + correo confirmado** en Supabase Auth. Así, aunque alguien se registre con tu correo antes que tú, sin confirmar no tiene permisos. Recomiendo además cerrar el registro público.

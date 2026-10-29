@@ -130,12 +130,16 @@ t('empareja nombres cortados, abreviados y con erratas', () => {
     { id: 5, nombre: 'Jorge', apellido1: 'Biritxinaga', apellido2: 'Acebal' },
     { id: 6, nombre: 'Xabier', apellido1: 'Uriarte', apellido2: 'Garcia-Echave' },
     { id: 7, nombre: 'Jon', apellido1: 'Uriarte', apellido2: 'Garcia-Echave' },
+    { id: 8, nombre: 'Juan', apellido1: 'Aniel', apellido2: 'Quiroga' },
   ]
   assert.equal(matchName('FCO. JAVIE SOBRINO ANDUEZA', ps).player_id, 1)
   assert.equal(matchName('JUA RIAÑO GARCIA DE PEREDA', ps).player_id, 2)
   assert.equal(matchName('FERMIN VIDAURRE LAINO', ps).player_id, 3)
   assert.equal(matchName('LUIS BIRICHINAGA ACEBAL', ps).player_id, 4)
   assert.equal(matchName('XAVI URIARTE GARCIA-ECHAVE', ps).player_id, 6)
+  assert.equal(matchName('JON URIARTE GARCIA-ECHAVE', ps).player_id, 7)
+  // El PDF trae un apellido más que la base
+  assert.equal(matchName('JUA ANIEL-QUIROGA TRUJILLO', ps).player_id, 8)
   assert.equal(matchName('PERSONA DESCONOCIDA', ps).player_id, null)
 })
 

@@ -173,7 +173,9 @@ export function matchName(name, players) {
       if (!b.length) return { id: p.id, score: 0 }
       const simA = a.reduce((s, t) => s + bestSim(t, b), 0) / a.length
       const simB = b.reduce((s, t) => s + bestSim(t, a), 0) / b.length
-      return { id: p.id, score: Math.round(100 * (0.6 * simA + 0.4 * simB)) }
+      // Simétrico: vale tanto si el PDF trae una palabra de más (segundo apellido que la base no tiene)
+      // como si la base tiene una que el PDF no trae.
+      return { id: p.id, score: Math.round(100 * Math.max(0.6 * simA + 0.4 * simB, 0.4 * simA + 0.6 * simB)) }
     })
     .filter((x) => x.score >= 40)
     .sort((x, y) => y.score - x.score)
