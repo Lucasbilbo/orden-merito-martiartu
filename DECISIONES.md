@@ -51,3 +51,4 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 30. **Hándicap y comentario opcionales** en la inscripción (para el campo y para pedir partida). No sustituyen al hándicap del PDF de resultados.
 31. Migraciones 0003 (inscripciones) y la que quita la obligación de contacto a las altas del admin: **aplicadas directamente en Supabase**, porque solo añaden. Probadas antes en Postgres local y después en producción dentro de una transacción deshecha.
 32. **Plazas por defecto: 45** (lo normal en los torneos, dicho por Lucas). Se rellena al abrir la inscripción y se puede cambiar en cada torneo.
+33. **La base no se pausa:** una función programada de Netlify (`netlify/functions/keepalive.mts`) consulta Supabase cada día a las 05:17 UTC, así el plan gratuito nunca llega a los 7 días sin actividad. Alternativa descartada: Supabase Pro (unos 25 $/mes).
