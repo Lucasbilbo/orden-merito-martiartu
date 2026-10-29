@@ -21,13 +21,15 @@ const defaultClose = (date) => {
   d.setDate(d.getDate() - 2)
   return d.toISOString()
 }
+const DEFAULT_PLAZAS = 45
 const STATE_TXT = { no_hay: 'Sin inscripción', sin_abrir: 'Programada', abierta: 'Abierta', cerrada: 'Cerrada' }
 
 function Settings({ t, onSaved }) {
   const [f, setF] = useState({
     opens: toLocalInput(t.signup_opens_at),
     closes: toLocalInput(t.signup_closes_at || (t.signup_opens_at ? null : defaultClose(t.date))),
-    max: t.max_players ?? '',
+    // Plazas por defecto: 45, lo normal en los torneos de la Orden
+    max: t.max_players ?? (t.signup_opens_at ? '' : DEFAULT_PLAZAS),
     notes: t.signup_notes ?? '',
   })
   const [msg, setMsg] = useState(null)
@@ -93,7 +95,7 @@ function Settings({ t, onSaved }) {
             type="button"
             onClick={() => {
               const closes = t.signup_closes_at && new Date(t.signup_closes_at) > new Date() ? t.signup_closes_at : defaultClose(t.date)
-              save({ signup_opens_at: new Date().toISOString(), signup_closes_at: closes }, 'Inscripción abierta.')
+              save({ signup_opens_at: new Date().toISOString(), signup_closes_at: closes, max_players: t.max_players ?? DEFAULT_PLAZAS }, 'Inscripción abierta.')
             }}
           >
             Abrir ahora

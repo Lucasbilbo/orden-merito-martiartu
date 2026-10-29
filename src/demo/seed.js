@@ -110,18 +110,18 @@ export function buildDemoData() {
   for (const h of handicaps) currentHcp[h.player_id] = h.handicap
   for (const p of players) if (currentHcp[p.id] == null) currentHcp[p.id] = baseHcp[p.id]
 
-  // Inscripción abierta para el siguiente torneo (el 5º), con plazas limitadas y algo de reserva.
+  // Inscripción abierta para el siguiente torneo (el 5º), con 45 plazas como los torneos reales.
   const now = Date.now()
   const next = tournaments[PLAYED]
   Object.assign(next, {
     signup_opens_at: new Date(now - 4 * 864e5).toISOString(),
     signup_closes_at: `${next.date}T18:00:00Z`.replace(next.date, new Date(new Date(next.date) - 2 * 864e5).toISOString().slice(0, 10)),
-    max_players: 28,
+    max_players: 45,
     signup_notes: 'Salidas desde las 9:00 por el tee del 1. Green fee 45 € (se paga en el campo). Comida después en el club.',
     tee_times_published: false,
   })
   const signups = []
-  const order = [...players].sort(() => rand() - 0.5).slice(0, 30)
+  const order = [...players].sort(() => rand() - 0.5).slice(0, 38)
   order.forEach((p, i) => {
     signups.push({
       id: i + 1,
@@ -132,15 +132,15 @@ export function buildDemoData() {
       phone: null,
       hcp: baseHcp[p.id],
       comment: i === 3 ? 'Si puede ser, salir con Jon Arrieta' : null,
-      status: i < 28 ? 'inscrito' : 'reserva',
+      status: 'inscrito',
       tee_time: null,
       cancel_token: `demo-${i + 1}`,
       created_at: new Date(now - (4 * 864e5 - i * 3 * 36e5)).toISOString(),
     })
   })
   signups.push({
-    id: 31, tournament_id: next.id, player_id: null, nombre: 'Invitado de Prueba Uno', email: null, phone: '600 000 000',
-    hcp: 24.5, comment: 'Amigo de Iñaki', status: 'reserva', tee_time: null, cancel_token: 'demo-31',
+    id: 39, tournament_id: next.id, player_id: null, nombre: 'Invitado de Prueba Uno', email: null, phone: '600 000 000',
+    hcp: 24.5, comment: 'Amigo de Iñaki', status: 'inscrito', tee_time: null, cancel_token: 'demo-39',
     created_at: new Date(now - 36e5).toISOString(),
   })
 

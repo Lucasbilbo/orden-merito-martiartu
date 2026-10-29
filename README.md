@@ -30,7 +30,7 @@ Guardar de nuevo un torneo sustituye sus resultados; no duplica.
 
 ## Inscripciones
 
-1. `/admin` > en un torneo sin jugar, **Inscripciones**. Pon cuándo se abre y se cierra (por defecto, dos días antes a las 20:00), las plazas (vacío = sin límite) y la información para los jugadores (hora, green fee…). O pulsa **Abrir ahora**.
+1. `/admin` > en un torneo sin jugar, **Inscripciones**. Pon cuándo se abre y se cierra (por defecto, dos días antes a las 20:00), las plazas (45 por defecto; vacío = sin límite) y la información para los jugadores (hora, green fee…). O pulsa **Abrir ahora**.
 2. Comparte el enlace del torneo (`/torneo/ID`) en el grupo de WhatsApp. En la portada sale un aviso del próximo torneo con inscripción abierta.
 3. Cada jugador se busca en la lista de la Orden (o se apunta como invitado), deja correo o teléfono y recibe un enlace propio para ver o anular su inscripción. Si no quedan plazas, entra en reserva; cuando alguien anula, sube el primero de la reserva.
 4. En el panel ves contactos y comentarios, puedes apuntar a alguien a mano (sin contacto si hace falta), cambiar estados, **exportar CSV** para el campo y **copiar la lista** para WhatsApp.

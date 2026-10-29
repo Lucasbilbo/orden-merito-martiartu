@@ -4,7 +4,7 @@ import { seasonBoard, tournamentResults } from '../lib/standings.js'
 import { mergeEntries } from './real.js'
 import { cancelSignup as cancelRule, createSignup as createRule, publicList, statusSummary } from '../lib/signups.js'
 
-const STORE = 'om-demo-data-v2'
+const STORE = 'om-demo-data-v3'
 let _db = null
 const D = () => (_db ??= load())
 
