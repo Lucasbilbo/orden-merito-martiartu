@@ -18,7 +18,7 @@ export async function getTournaments() {
   const rows = unwrap(
     await supabase
       .from('tournaments')
-      .select('id,name,date,course,coeficiente,is_final,results(count)')
+      .select('*,results(count)')
       .order('date', { ascending: true }),
   )
   return rows.map(({ results, ...t }) => ({ ...t, n_results: results?.[0]?.count ?? 0 }))
@@ -165,4 +165,80 @@ export async function saveTournamentResults(tournamentId, rows) {
 export async function setParam(name, value, description) {
   const today = new Date().toISOString().slice(0, 10)
   unwrap(await supabase.from('params').upsert({ name, value: Number(value), valid_from: today, description }))
+}
+
+// ---------- Inscripciones ----------
+const rpcError = (e) => {
+  // Los mensajes de las funciones signup_* ya vienen en castellano para el jugador.
+  throw new Error(e.message || 'No se ha podido completar la inscripción.')
+}
+
+export async function getSignupStatus(tournamentId) {
+  try {
+    const rows = unwrap(await supabase.rpc('signup_status', { p_tournament_id: tournamentId }))
+    return rows?.[0] || null
+  } catch (e) {
+    if (missing(e)) return null
+    throw e
+  }
+}
+
+export async function getSignupList(tournamentId) {
+  try {
+    return unwrap(await supabase.rpc('signup_list', { p_tournament_id: tournamentId }))
+  } catch (e) {
+    if (missing(e)) return []
+    throw e
+  }
+}
+
+export async function createSignup({ tournament_id, player_id, nombre, email, phone, hcp, comment }) {
+  const { data, error } = await supabase.rpc('signup_create', {
+    p_tournament_id: tournament_id,
+    p_player_id: player_id || null,
+    p_nombre: nombre || null,
+    p_email: email || null,
+    p_phone: phone || null,
+    p_hcp: hcp === '' || hcp == null ? null : Number(String(hcp).replace(',', '.')),
+    p_comment: comment || null,
+  })
+  if (error) rpcError(error)
+  return data
+}
+
+export async function lookupSignup(token) {
+  const { data, error } = await supabase.rpc('signup_lookup', { p_token: token })
+  if (error) {
+    if (/uuid/i.test(error.message)) return null
+    throw new Error(error.message)
+  }
+  return data?.[0] || null
+}
+
+export async function cancelSignup(token) {
+  const { data, error } = await supabase.rpc('signup_cancel', { p_token: token })
+  if (error) rpcError(error)
+  return data
+}
+
+// Admin
+export async function adminGetSignups(tournamentId) {
+  return unwrap(
+    await supabase
+      .from('signups')
+      .select('id,tournament_id,player_id,nombre,email,phone,hcp,comment,status,tee_time,cancel_token,created_at')
+      .eq('tournament_id', tournamentId)
+      .order('created_at'),
+  )
+}
+export async function adminAddSignup(row) {
+  return unwrap(await supabase.from('signups').insert(row).select('id').single()).id
+}
+export async function adminUpdateSignup(id, patch) {
+  unwrap(await supabase.from('signups').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id))
+}
+export async function adminSetTeeTimes(pairs) {
+  for (const [id, tee_time] of pairs) {
+    unwrap(await supabase.from('signups').update({ tee_time: tee_time || null }).eq('id', id))
+  }
 }

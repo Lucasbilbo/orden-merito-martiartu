@@ -41,3 +41,12 @@ Decisiones tomadas sin consultar, para revisar. Cualquiera se cambia fácil.
 
 ## Hándicap limitado (confirmado por Lucas, 29/10)
 24. Hasta ahora la Orden no limitaba el hándicap de juego; por eso en Uraburu 2026 los Stableford guardados de los jugadores con hándicap alto son mayores que los del PDF (el campo topó en 36). **Desde la próxima temporada se limita**, así que los puntos del PDF valen tal cual. Los resultados históricos no se tocan.
+
+## Inscripciones (fase 2, 29/10)
+25. **Sin cuentas de jugador.** Para apuntarse se elige el nombre de la lista de la Orden (o se escribe, si es invitado) y se deja correo o teléfono, que solo ve el admin. Cada inscripción tiene un enlace secreto para verla o anularla, y el navegador lo recuerda. Las cuentas con enlace por correo obligarían a montar un servicio de envío (el de Supabase gratis solo manda unos pocos correos por hora). Se pueden añadir más adelante.
+26. **Avisos por WhatsApp, no por correo:** el admin copia la lista o los horarios ya formateados y los pega en el grupo. No requiere configurar nada. El envío automático (correo o WhatsApp vía Blip/Meta) queda en el ROADMAP.
+27. **Plazas y reserva automáticas:** al llenarse, los nuevos van a reserva por orden de llegada; si alguien anula, sube el primero. El admin puede mover a cualquiera a mano.
+28. **Cierre por defecto: dos días antes del torneo a las 20:00** (editable). Nadie puede anular por su cuenta una vez empezado el día del torneo.
+29. **Evitar duplicados:** el mismo jugador de la Orden, o el mismo nombre, no puede estar dos veces activo en un torneo. Sin captcha de momento; hay un tope de 300 inscripciones por torneo y el admin puede anular cualquier fila. Si aparece spam, se añade Cloudflare Turnstile.
+30. **Hándicap y comentario opcionales** en la inscripción (para el campo y para pedir partida). No sustituyen al hándicap del PDF de resultados.
+31. Migraciones 0003 (inscripciones) y la que quita la obligación de contacto a las altas del admin: **aplicadas directamente en Supabase**, porque solo añaden. Probadas antes en Postgres local y después en producción dentro de una transacción deshecha.

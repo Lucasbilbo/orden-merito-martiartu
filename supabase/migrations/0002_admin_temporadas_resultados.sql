@@ -1,4 +1,4 @@
--- PENDIENTE DE APLICAR. Pegar entera en Supabase > SQL Editor > New query > Run.
+-- YA APLICADA el 29/10/2026 en Supabase (por Lucas desde el SQL Editor).
 -- Es idempotente en lo posible y NO borra datos: solo añade tablas, columnas, políticas y funciones.
 --
 -- Qué hace:

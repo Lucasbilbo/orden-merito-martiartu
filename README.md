@@ -28,6 +28,16 @@ Entra en `/admin` con ese correo y contraseña.
 
 Guardar de nuevo un torneo sustituye sus resultados; no duplica.
 
+## Inscripciones
+
+1. `/admin` > en un torneo sin jugar, **Inscripciones**. Pon cuándo se abre y se cierra (por defecto, dos días antes a las 20:00), las plazas (vacío = sin límite) y la información para los jugadores (hora, green fee…). O pulsa **Abrir ahora**.
+2. Comparte el enlace del torneo (`/torneo/ID`) en el grupo de WhatsApp. En la portada sale un aviso del próximo torneo con inscripción abierta.
+3. Cada jugador se busca en la lista de la Orden (o se apunta como invitado), deja correo o teléfono y recibe un enlace propio para ver o anular su inscripción. Si no quedan plazas, entra en reserva; cuando alguien anula, sube el primero de la reserva.
+4. En el panel ves contactos y comentarios, puedes apuntar a alguien a mano (sin contacto si hace falta), cambiar estados, **exportar CSV** para el campo y **copiar la lista** para WhatsApp.
+5. **Horarios:** genéralos automáticamente (primera salida, minutos entre partidas, jugadores por partida) o escríbelos a mano; **Publicar horarios** los muestra en la web, y **Copiar horarios** te da el texto para WhatsApp.
+
+En público solo se ven los nombres; correo, teléfono, hándicap y comentarios solo los ve el admin.
+
 ## Reglas
 
 - **Clasificación de la temporada:** mejores N resultados (4 por defecto) + final × 2. Se cambia por temporada en `/admin` > *Reglas de AAAA*.
@@ -48,10 +58,10 @@ Estructura:
 
 ```
 src/pages/        web pública (clasificación, ranking, torneos, página de torneo)
-src/admin/        panel admin (torneos y temporadas, resultados, jugadores, reglas)
+src/admin/        panel admin (torneos y temporadas, resultados, inscripciones, jugadores, reglas)
 src/data/         real.js (Supabase), demo.js (datos inventados), api.js elige uno
 src/lib/          standings.js (cálculos), paste.js (lectura de pegados), format.js
-supabase/migrations/  0001 ya aplicada; 0002 pendiente de aplicar
+supabase/migrations/  0001, 0002 y 0003 aplicadas en Supabase
 ```
 
 La clave de Supabase del código es la pública (anon): solo puede hacer lo que permiten las políticas RLS. Se puede cambiar con las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en Netlify.

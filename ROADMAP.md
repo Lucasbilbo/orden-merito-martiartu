@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Hecho (v2, 29/10/2026)
+Inscripciones a torneos e importación de PDF (ver abajo).
 Clasificación con puntos por torneo y desempate, páginas de torneo, panel admin (temporadas, torneos, resultados pegados o a mano, jugadores, reglas), modo demo, pruebas.
 
 ## Pendiente de la v1
@@ -8,33 +9,13 @@ Clasificación con puntos por torneo y desempate, páginas de torneo, panel admi
 - Logo de la torre (`omtorre.png`) en la cabecera: falta el archivo.
 - Tres incidencias antiguas de datos (feb-2025 resultado sin jugador; oct-2022 Scratch sin puesto; oct-2023 fila duplicada).
 
-## Fase 2 — Inscripciones (especificación)
-
-### Objetivo
-Que los jugadores se apunten a cada torneo desde el móvil en lugar del grupo de WhatsApp, y que el admin tenga la lista y los horarios.
-
-### Usuarios
-- **Invitado:** se apunta con nombre, apellidos, correo y hándicap, sin cuenta. Recibe un enlace por correo para anular.
-- **Jugador registrado:** cuenta con enlace mágico (Supabase Auth). Se le vincula a su ficha de `players` (el admin confirma la primera vez para evitar suplantaciones). Ve sus inscripciones y su historial.
-- **Admin:** abre y cierra inscripciones, ve la lista, la exporta para el campo y publica horarios.
-
-### Modelo
-```
-tournaments  + signup_opens_at, signup_closes_at, max_players (null = sin límite), notes
-signups      (id, tournament_id, player_id null, guest_name, guest_email, hcp, status: inscrito|reserva|anulado,
-              created_at, cancel_token)
-tee_times    (tournament_id, slot_time, hole, player_ids int[])   -- o columna tee_time en signups
-player_accounts (user_id uuid -> auth.users, player_id, confirmed_by_admin bool)
-```
-RLS: el público ve cuántos inscritos hay y los nombres (como la clasificación); cada usuario solo crea/anula lo suyo; el admin todo. Inserción de invitados mediante una función RPC con límite de frecuencia y captcha (Turnstile) para evitar spam.
-
-### Pantallas
-- Torneo: botón **Apuntarme** mientras esté abierto; lista de inscritos; lista de reserva si hay cupo.
-- Admin: inscritos del torneo (pasarlos a resultados con un clic, ya emparejados), exportar CSV para el campo, editor de horarios.
-- Aviso de horarios: correo a los inscritos al publicar (Supabase Edge Function + Resend, plan gratuito) y, más adelante, WhatsApp vía Blip/Meta con plantilla aprobada.
-
-### Fuera
-Pago (lo dijiste). Gestión del hándicap oficial: la RFEG no tiene API pública, se sigue metiendo a mano.
+## Inscripciones — HECHO (29/10)
+Apuntarse sin cuenta, plazas y reserva, enlace para anular, panel admin con CSV, horarios automáticos y textos para WhatsApp. Pendiente:
+- **Avisos automáticos:** correo al publicar horarios o al subir de reserva (Supabase Edge Function + Resend; necesita cuenta de Resend y, mejor, un dominio propio). Más adelante, WhatsApp con plantilla aprobada vía Blip/Meta.
+- **Cuentas de jugador** (enlace mágico) para ver su historial e inscribirse sin rellenar datos. Requiere el mismo servicio de correo.
+- **Captcha** (Cloudflare Turnstile) si aparece spam.
+- **Pasar inscritos a resultados:** que la tabla de resultados salga ya con los inscritos emparejados.
+- **Pago:** fuera de alcance por ahora.
 
 ## Importar resultados desde PDF — HECHO (29/10)
 Funciona con el formato de Uraburu y Abra del Pas. Pendiente:

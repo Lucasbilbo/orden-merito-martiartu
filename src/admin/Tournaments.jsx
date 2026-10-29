@@ -4,6 +4,9 @@ import { invalidateSite, useSite } from '../data/site.js'
 import { Link } from '../router.jsx'
 import { formatDate, seasonOf } from '../lib/format.js'
 import { Status } from '../components/ui.jsx'
+import { signupState } from '../lib/signups.js'
+
+const STATE_SHORT = { sin_abrir: 'programada', abierta: 'abierta', cerrada: 'cerrada' }
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -233,12 +236,26 @@ export default function Tournaments() {
                           <span className="admin-row-meta">
                             {t.is_final && <span className="badge">Final</span>}
                             {t.n_results ? `${t.n_results} resultados (Stb + Scr)` : <span className="pending">Sin resultados</span>}
+                            {!t.n_results && signupState(t) !== 'no_hay' && (
+                              <span className={`pill ${signupState(t)}`}>Inscripción {STATE_SHORT[signupState(t)]}</span>
+                            )}
                           </span>
                         </div>
                         <div className="admin-row-actions">
-                          <Link className="btn primary" to={`/admin/torneo/${t.id}`}>
-                            Resultados
-                          </Link>
+                          {t.n_results ? (
+                            <Link className="btn primary" to={`/admin/torneo/${t.id}`}>
+                              Resultados
+                            </Link>
+                          ) : (
+                            <>
+                              <Link className="btn primary" to={`/admin/torneo/${t.id}/inscripciones`}>
+                                Inscripciones
+                              </Link>
+                              <Link className="btn" to={`/admin/torneo/${t.id}`}>
+                                Resultados
+                              </Link>
+                            </>
+                          )}
                           <button className="btn" type="button" onClick={() => setEditing(t.id)}>
                             Editar
                           </button>

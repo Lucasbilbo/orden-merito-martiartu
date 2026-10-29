@@ -3,6 +3,7 @@ import { match, usePath, Link } from './router.jsx'
 import { DemoBanner, Header } from './components/ui.jsx'
 import Home from './pages/Home.jsx'
 import Tournament from './pages/Tournament.jsx'
+import MySignup from './pages/MySignup.jsx'
 
 const Admin = lazy(() => import('./admin/Admin.jsx'))
 
@@ -20,6 +21,8 @@ function Page({ path }) {
   if (path === '/' || path === '') return <Home tab="clasificacion" />
   if (path === '/ranking') return <Home tab="ranking" />
   if (path === '/torneos') return <Home tab="torneos" />
+  const sg = match('/inscripcion/:token', path)
+  if (sg) return <MySignup key={sg.token} token={sg.token} />
   const t = match('/torneo/:id', path)
   if (t) return <Tournament key={t.id} id={t.id} />
   if (path === '/admin' || path.startsWith('/admin/'))

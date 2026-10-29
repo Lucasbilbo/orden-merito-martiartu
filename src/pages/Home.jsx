@@ -5,6 +5,8 @@ import { Link, navigate } from '../router.jsx'
 import { formatDate, formatPoints, MODALITIES, normalize, posLabel } from '../lib/format.js'
 import { useAsync } from '../lib/useAsync.js'
 import SeasonBoard, { useSeasonTournaments } from '../components/SeasonBoard.jsx'
+import { signupState } from '../lib/signups.js'
+import { formatWhen } from '../components/Signup.jsx'
 import { Flag, SeasonSelect, Segmented, Status } from '../components/ui.jsx'
 
 const TABS = [
@@ -117,7 +119,13 @@ function Tournaments({ site, season, q }) {
             <span className="t-course">{t.course || t.name}</span>
             <span className="t-meta">
               {t.is_final && <span className="badge">Final, puntúa ×{formatPoints(site.config(season).final_multiplier)}</span>}
-              {t.n_results > 0 ? <span>Resultados publicados</span> : <span className="pending">Por jugar</span>}
+              {t.n_results > 0 ? (
+                <span>Resultados publicados</span>
+              ) : signupState(t) === 'abierta' ? (
+                <span className="open-tag">Inscripción abierta</span>
+              ) : (
+                <span className="pending">Por jugar</span>
+              )}
             </span>
             <span className="chev" aria-hidden="true">›</span>
           </Link>
@@ -164,6 +172,23 @@ function Rules({ site, season }) {
   )
 }
 
+// Aviso del próximo torneo con la inscripción abierta.
+function NextTournament({ tournaments }) {
+  const open = tournaments.filter((t) => t.n_results === 0 && signupState(t) === 'abierta')
+  if (!open.length) return null
+  const t = open[0]
+  return (
+    <Link className="next-banner" to={`/torneo/${t.id}`}>
+      <span className="next-k">Próximo torneo · inscripción abierta</span>
+      <span className="next-t">{t.course || t.name}</span>
+      <span className="next-d">
+        {formatDate(t.date)} · hasta el {formatWhen(t.signup_closes_at || `${t.date}T00:00:00Z`)}
+      </span>
+      <span className="next-cta">Apuntarme ›</span>
+    </Link>
+  )
+}
+
 export default function Home({ tab }) {
   const site = useSite()
   const [q, setQ] = useQueryState()
@@ -181,6 +206,7 @@ export default function Home({ tab }) {
     <main className="wrap">
       <h1>Orden de Mérito</h1>
       <p className="lead">Clasificaciones y resultados de todos los torneos del club.</p>
+      {site.data && <NextTournament tournaments={site.data.tournaments} />}
 
       <div className="tabs" role="tablist" aria-label="Secciones">
         {TABS.map((t) => (

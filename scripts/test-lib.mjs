@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { matchName, parsePasted, splitName } from '../src/lib/paste.js'
 import { tournamentResults } from '../src/lib/standings.js'
 import { parseResultSheet, resolveModalities } from '../src/lib/pdfResults.js'
+import { cancelSignup, createSignup, makeTeeTimes, publicList, signupState, whatsappText } from '../src/lib/signups.js'
 
 let n = 0
 const t = (label, fn) => {
@@ -141,6 +142,48 @@ t('empareja nombres cortados, abreviados y con erratas', () => {
   // El PDF trae un apellido más que la base
   assert.equal(matchName('JUA ANIEL-QUIROGA TRUJILLO', ps).player_id, 8)
   assert.equal(matchName('PERSONA DESCONOCIDA', ps).player_id, null)
+})
+
+
+t('inscripciones: estado, plazas, reserva, duplicados y anulación', () => {
+  const now = new Date('2027-06-01T10:00:00Z')
+  const t = { id: 5, date: '2027-06-06', course: 'Abra del Pas', signup_opens_at: '2027-05-25T08:00:00Z', signup_closes_at: '2027-06-04T18:00:00Z', max_players: 2 }
+  assert.equal(signupState(t, now), 'abierta')
+  assert.equal(signupState(t, new Date('2027-05-20T00:00:00Z')), 'sin_abrir')
+  assert.equal(signupState(t, new Date('2027-06-05T00:00:00Z')), 'cerrada')
+  assert.equal(signupState({ date: '2027-06-06' }, now), 'no_hay')
+  const players = [{ id: 1, nombre: 'Ane', apellido1: 'Zubizarreta', apellido2: 'Olano' }, { id: 2, nombre: 'Jon', apellido1: 'Arrieta', apellido2: null }]
+  const list = []
+  let k = 0
+  const add = (input) => {
+    const r = createSignup({ t, signups: list, players, input, now: new Date(now.getTime() + ++k * 1000), uuid: () => `tok${k}` })
+    list.push(r)
+    return r
+  }
+  assert.equal(add({ player_id: 1, email: 'a@b.es' }).status, 'inscrito')
+  assert.throws(() => add({ player_id: 1, email: 'otro@b.es' }), /ya está inscrito/)
+  assert.throws(() => add({ player_id: 2 }), /correo o un teléfono/)
+  assert.throws(() => add({ nombre: 'Solo', phone: '600111222' }), /nombre y apellidos/)
+  assert.equal(add({ player_id: 2, phone: '600 111 222' }).status, 'inscrito')
+  assert.equal(add({ nombre: 'Invitado Prueba', email: 'i@b.es' }).status, 'reserva')
+  const up = cancelSignup({ t, signups: list, row: list[0], now })
+  assert.equal(up, 'Invitado Prueba')
+  assert.deepEqual(publicList(t, list).map((x) => [x.nombre, x.estado]), [['Jon Arrieta', 'inscrito'], ['Invitado Prueba', 'inscrito']])
+  assert.throws(() => cancelSignup({ t, signups: list, row: list[1], now: new Date('2027-06-06T08:00:00Z') }), /ya ha empezado/)
+})
+
+t('horarios automáticos y texto para WhatsApp', () => {
+  assert.deepEqual(makeTeeTimes(['a', 'b', 'c', 'd', 'e'], { start: '09:00', every: 10, per: 4 }), ['09:00', '09:00', '09:00', '09:00', '09:10'])
+  assert.deepEqual(makeTeeTimes(['a', 'b'], { start: '09:55', every: 10, per: 1, hole: 'Hoyo 10' }), ['09:55 · Hoyo 10', '10:05 · Hoyo 10'])
+  const txt = whatsappText({
+    t: { date: '2027-06-06', course: 'Abra del Pas' },
+    list: [{ nombre: 'A B', estado: 'inscrito', horario: '09:00' }, { nombre: 'C D', estado: 'inscrito', horario: '09:00' }, { nombre: 'E F', estado: 'reserva' }],
+    kind: 'horarios',
+  })
+  assert.match(txt, /\*09:00\*: A B, C D/)
+  assert.doesNotMatch(txt, /E F/)
+  const lista = whatsappText({ t: { date: '2027-06-06', course: 'X' }, list: [{ nombre: 'A B', estado: 'inscrito' }, { nombre: 'E F', estado: 'reserva' }], kind: 'lista', url: 'https://x' })
+  assert.match(lista, /1\. A B[\s\S]*Reserva \(1\):\n1\. E F[\s\S]*https:\/\/x/)
 })
 
 console.log(`\n${n} pruebas OK`)

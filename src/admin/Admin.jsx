@@ -4,6 +4,7 @@ import { Link, match } from '../router.jsx'
 import Login from './Login.jsx'
 import Tournaments from './Tournaments.jsx'
 import Results from './Results.jsx'
+import Signups from './Signups.jsx'
 import Players from './Players.jsx'
 import Rules from './Rules.jsx'
 
@@ -37,6 +38,8 @@ function useAdminSession() {
 }
 
 function Section({ path }) {
+  const sg = match('/admin/torneo/:id/inscripciones', path)
+  if (sg) return <Signups key={sg.id} id={Number(sg.id)} />
   const r = match('/admin/torneo/:id', path)
   if (r) return <Results key={r.id} id={Number(r.id)} />
   if (path === '/admin/jugadores') return <Players />

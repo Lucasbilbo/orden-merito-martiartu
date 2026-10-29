@@ -5,6 +5,7 @@ import { formatDate, formatPoints, fullName, MODALITIES, seasonOf } from '../lib
 import { useAsync } from '../lib/useAsync.js'
 import { Flag, Segmented, Status } from '../components/ui.jsx'
 import { qs, useQueryState } from './Home.jsx'
+import SignupSection from '../components/Signup.jsx'
 
 export default function Tournament({ id }) {
   const site = useSite()
@@ -51,6 +52,10 @@ export default function Tournament({ id }) {
               )}
             </p>
 
+            {t.n_results === 0 && <SignupSection t={t} />}
+
+            {t.n_results > 0 && (
+            <>
             <div className="controls">
               <Segmented value={q.modalidad} onChange={(m) => setQ({ modalidad: m })} options={MODALITIES} label="Modalidad" />
             </div>
@@ -86,6 +91,9 @@ export default function Tournament({ id }) {
                 </p>
               )}
             </Status>
+            </>
+            )}
+            {t.n_results === 0 && <p className="empty">Los resultados se publicarán aquí cuando se juegue.</p>}
 
             <nav className="pager" aria-label="Otros torneos">
               {prev ? (

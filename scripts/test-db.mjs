@@ -150,5 +150,46 @@ check('guardar de nuevo sustituye los resultados', Number(psql('select count(*) 
 tries('authenticated', ADMIN, `select public.save_tournament_results(5, '${JSON.stringify([{ ...rows[0], pos_stableford: 7 }])}'::jsonb)`)
 check('se respeta el puesto dado a mano', psql("select position from public.results where tournament_id=5 and modality='stableford'").trim() === '7')
 
+
+// --- Inscripciones (0003) ---
+file('supabase/migrations/0003_inscripciones.sql')
+file('supabase/migrations/0003_inscripciones.sql')
+check('0003 se puede aplicar dos veces', true)
+const anonSql = (sql) => psql(as('anon', null, sql)).trim().split('\n').filter(Boolean).pop()
+const anonTry = (sql) => tries('anon', null, sql)
+const signup = (tid, pid, nombre, email, phone = null) =>
+  `select public.signup_create(${tid}, ${pid ?? 'null'}, ${nombre ? `'${nombre}'` : 'null'}, ${email ? `'${email}'` : 'null'}, ${phone ? `'${phone}'` : 'null'}, null, null)`
+// Torneo 6 (por jugar): sin configurar
+check('sin abrir: no deja apuntarse', !anonTry(signup(6, 1, null, 'a@b.es')))
+psql(`update public.tournaments set signup_opens_at = now() - interval '1 day', signup_closes_at = now() + interval '5 day', max_players = 3, date = (now() + interval '7 day')::date where id = 6`)
+check('estado abierta', anonSql(`select estado from public.signup_status(6)`) === 'abierta')
+check('jugador de la Orden se apunta', anonTry(signup(6, 1, null, 'uno@b.es')))
+check('no se apunta dos veces', !anonTry(signup(6, 1, null, 'otro@b.es')))
+check('sin contacto no deja', !anonTry(signup(6, 2, null, null)))
+check('invitado se apunta', anonTry(signup(6, null, 'Persona Invitada', null, '600 111 222')))
+check('invitado sin apellido no deja', !anonTry(signup(6, null, 'Persona', 'p@b.es')))
+check('tercero entra', anonTry(signup(6, 2, null, 'dos@b.es')))
+check('cuarto va a reserva', anonSql(`select ${signup(6, 3, null, 'tres@b.es').replace('select ', '')} ->> 'estado'`) === 'reserva')
+check('anon NO lee la tabla de inscripciones', count('anon', null, 'select count(*) from public.signups') === 0)
+check('lista pública: 4 nombres, sin contacto', (() => {
+  const out = psql(as('anon', null, `select json_agg(l)::text from public.signup_list(6) l`)).split('\n').filter((x) => /^\s*[[{]/.test(x)).join('')
+  const l = JSON.parse(out)
+  return l.length === 4 && !out.includes('@') && l[3].estado === 'reserva'
+})())
+const tok = psql(`select cancel_token from public.signups where tournament_id = 6 and player_id = 1`).trim()
+check('consultar por enlace', anonSql(`select estado from public.signup_lookup('${tok}')`) === 'inscrito')
+check('anular por enlace', anonTry(`select public.signup_cancel('${tok}')`))
+check('al anular, sube el de reserva', psql(`select status from public.signups where tournament_id = 6 and player_id = 3`).trim() === 'inscrito')
+check('anulado puede volver a apuntarse', anonTry(signup(6, 1, null, 'uno@b.es')))
+check('token falso no anula nada', !anonTry(`select public.signup_cancel('00000000-0000-0000-0000-000000000000')`))
+check('usuario normal NO lee inscripciones', count('authenticated', OTHER, 'select count(*) from public.signups') === 0)
+check('admin lee inscripciones con contacto', count('authenticated', ADMIN, 'select count(*) from public.signups where email is not null or phone is not null') >= 4)
+check('admin puede poner horario', tries('authenticated', ADMIN, `update public.signups set tee_time = '09:10' where tournament_id = 6`))
+check('horario oculto hasta publicar', anonSql(`select count(horario) from public.signup_list(6)`) === '0')
+psql(`update public.tournaments set tee_times_published = true where id = 6`)
+check('horario visible al publicar', Number(anonSql(`select count(horario) from public.signup_list(6)`)) > 0)
+psql(`update public.tournaments set signup_closes_at = now() - interval '1 minute' where id = 6`)
+check('cerrada: no deja apuntarse', !anonTry(signup(6, 4, null, 'c@b.es')))
+
 console.log(failures ? `\n${failures} prueba(s) fallida(s)` : '\nTodas las pruebas OK')
 process.exit(failures ? 1 : 0)

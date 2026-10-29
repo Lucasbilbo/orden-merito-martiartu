@@ -2,8 +2,9 @@
 import { buildDemoData } from '../demo/seed.js'
 import { seasonBoard, tournamentResults } from '../lib/standings.js'
 import { mergeEntries } from './real.js'
+import { cancelSignup as cancelRule, createSignup as createRule, publicList, statusSummary } from '../lib/signups.js'
 
-const STORE = 'om-demo-data-v1'
+const STORE = 'om-demo-data-v2'
 let _db = null
 const D = () => (_db ??= load())
 
@@ -165,6 +166,69 @@ export function setParam(name, value, description) {
   const today = new Date().toISOString().slice(0, 10)
   D().params = D().params.filter((p) => !(p.name === name && p.valid_from === today))
   D().params.push({ name, value: Number(value), valid_from: today, description })
+  save()
+  return wait(null)
+}
+
+// ---------- Inscripciones (demo) ----------
+
+const sg = () => (D().signups ??= [])
+const tById = (id) => D().tournaments.find((t) => t.id === Number(id))
+const uuid = () =>
+  (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`).toString()
+const fail = (e) => Promise.reject(e instanceof Error ? e : new Error(String(e)))
+
+export const getSignupStatus = (tid) => wait(tById(tid) ? statusSummary(tById(tid), sg()) : null)
+export const getSignupList = (tid) => wait(tById(tid) ? publicList(tById(tid), sg()) : [])
+export function createSignup(input) {
+  try {
+    const row = createRule({ t: tById(input.tournament_id), signups: sg(), players: D().players, input, uuid })
+    sg().push(row)
+    save()
+    return wait({ estado: row.status, nombre: row.nombre, token: row.cancel_token })
+  } catch (e) {
+    return fail(e)
+  }
+}
+export function lookupSignup(token) {
+  const s = sg().find((x) => x.cancel_token === token)
+  if (!s) return wait(null)
+  const t = tById(s.tournament_id)
+  return wait({
+    tournament_id: t.id,
+    torneo: t.course || t.name,
+    fecha: t.date,
+    nombre: s.nombre,
+    estado: s.status,
+    horario: t.tee_times_published ? s.tee_time : null,
+    puede_anular: s.status !== 'anulado' && new Date() < new Date(`${t.date}T00:00:00Z`),
+  })
+}
+export function cancelSignup(token) {
+  const s = sg().find((x) => x.cancel_token === token)
+  if (!s) return fail(new Error('Inscripción no encontrada'))
+  try {
+    const up = cancelRule({ t: tById(s.tournament_id), signups: sg(), row: s })
+    save()
+    return wait({ estado: 'anulado', sube_de_reserva: up })
+  } catch (e) {
+    return fail(e)
+  }
+}
+export const adminGetSignups = (tid) => wait(sg().filter((s) => s.tournament_id === Number(tid)).sort((a, b) => a.created_at.localeCompare(b.created_at)))
+export function adminAddSignup(row) {
+  const id = Math.max(0, ...sg().map((s) => s.id)) + 1
+  sg().push({ status: 'inscrito', tee_time: null, comment: null, hcp: null, email: null, phone: null, player_id: null, ...row, id, cancel_token: uuid(), created_at: new Date().toISOString() })
+  save()
+  return wait(id)
+}
+export function adminUpdateSignup(id, patch) {
+  Object.assign(sg().find((s) => s.id === id), patch)
+  save()
+  return wait(null)
+}
+export function adminSetTeeTimes(pairs) {
+  for (const [id, tee] of pairs) sg().find((s) => s.id === id).tee_time = tee || null
   save()
   return wait(null)
 }
